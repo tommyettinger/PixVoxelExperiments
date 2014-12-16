@@ -16,7 +16,7 @@ namespace Experiments
     public class Voxels : Shape
     {
         
-        private const int White = (int)((0xff << 24) | 0xffffff);
+        private const uint White = 0xffffffff;
 
         public Voxel[] readBVX(string filename)
         {
@@ -51,7 +51,7 @@ namespace Experiments
             for(int c = 0; c < voxels.Length; c++)
             {
                 int vx = (voxels[c].x + voxels[c].y) * 2;
-                int vy = voxels[c].x  - voxels[c].y - voxels[c].z * 3;
+                int vy = - voxels[c].x  + voxels[c].y + voxels[c].z * 3;
                 Vertices[c * 4 + 0] = new Vector3(vx - 1.0f, vy - 1.0f, 0f);
                 Vertices[c * 4 + 1] = new Vector3(vx + 1.0f, vy - 1.0f, 0f);
                 Vertices[c * 4 + 2] = new Vector3(vx + 1.0f, vy + 1.0f, 0f);
@@ -79,7 +79,7 @@ namespace Experiments
             }
 
 
-            Colors = new int[4 * voxels.Length];
+            Colors = new uint[4 * voxels.Length];
             Colors.Fill(White);
             /*
 top is    "(1.0 / 1024.0) * (5 * row)" and bottom is "(1.0 / 1024.0) * (5 * row + 4)"

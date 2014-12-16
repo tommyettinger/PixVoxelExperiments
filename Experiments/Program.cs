@@ -27,11 +27,18 @@ namespace Experiments
         #region --- Fields ---
 
         const string vertex_shader =
-@"void main()
+@"uniform mat4 projection;
+uniform mat4 view;
+uniform mat4 model;
+ 
+attribute vec4 vertex;
+ 
+void main(void)
 {
-    gl_FrontColor = gl_Color;
-    gl_Position = ftransform();
-}";
+  gl_FrontColor = gl_Color;
+  gl_Position = projection * view * model * vertex;
+}
+";
         const string fragment_shader =
   @"void main()
 {
@@ -211,7 +218,7 @@ namespace Experiments
             GL.Viewport(0, 0, Width, Height);
 
             float aspect_ratio = Width / (float)Height;
-            GL.Ortho(0.0, Width, Height, 0.0, 1.0, -1.0);
+            GL.Ortho(0.0, Width, Height, 0.0, -1.0, 1.0);
             GL.MatrixMode(MatrixMode.Projection);
         }
 
@@ -251,7 +258,7 @@ namespace Experiments
             GL.Clear(ClearBufferMask.ColorBufferBit |
                      ClearBufferMask.DepthBufferBit);
             GL.PushMatrix();
-            GL.Ortho(0.0, Width, Height, 0.0, 1.0, -1.0);
+            GL.Ortho(0.0, Width, Height, 0.0, -1.0, 1.0);
 
             GL.EnableClientState(ArrayCap.VertexArray);
             GL.EnableClientState(ArrayCap.ColorArray);

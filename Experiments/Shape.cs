@@ -14,7 +14,7 @@ namespace Experiments
         private Vector3[] vertices, normals;
         private Vector2[] texcoords;
         private int[] indices;
-        private int[] colors;
+        private uint[] colors;
 
         public Vector3[] Vertices
         {
@@ -52,7 +52,7 @@ namespace Experiments
             }
         }
 
-        public int[] Colors
+        public uint[] Colors
         {
             get { return colors; }
             protected set
