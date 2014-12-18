@@ -59,6 +59,36 @@ public class Experiments extends ApplicationAdapter {
         }
     }
     static Random r = new Random();
+
+    public void cullVoxels()
+    {
+        boolean visible = false;
+        culled_length = 0;
+        zbuffer = minbuffer.clone();
+        for (short z = (short)(zsize - 1); z >= 0 ; z--) {
+            for (short x = (short) (xsize - 1); x >= 0; x--) {
+                for (short y = 0; y < ysize; y++) {
+                    currentX = (x + y) * 2;
+                    currentY = height + y - x + z * 3;
+                    if ((voxels[x][y][z] & 0xff) == 255 || currentX < 0 || currentY < 0 || currentX >= width * 2 - 4 || currentY >= height * 2 - 4)
+                        continue;
+                    for (int ix = 0; ix < 4; ix++) {
+                        for (int iy = 0; iy < 4; iy++) {
+                            if (zbuffer[ix + currentX][iy + currentY] == -9999) {
+                                zbuffer[ix + currentX][iy + currentY] = (short) (z + x - y);
+                                visible = true;
+                            }
+                        }
+                    }
+                    if (visible) {
+                        culled[culled_length++] = new short[]{x, y, z, voxels[x][y][z]};
+                        visible = false;
+                    }
+                }
+            }
+        }
+    }
+
 	@Override
 	public void create () {
         width = Gdx.graphics.getWidth();
@@ -93,32 +123,11 @@ public class Experiments extends ApplicationAdapter {
                 minbuffer[i][j] = -9999;
                 maxbuffer[i][j] = 255;
             }
-        zbuffer = minbuffer.clone();
         outlinebuffer = maxbuffer.clone();
 
-        boolean visible = false;
-        for (short z = (short)(zsize - 1); z >= 0 ; z--) {
-            for (short x = (short) (xsize - 1); x >= 0; x--) {
-                for (short y = 0; y < ysize; y++) {
-                    currentX = (x + y) * 2;
-                    currentY = height + y - x + z * 3;
-                    if ((voxels[x][y][z] & 0xff) == 255 || currentX < 0 || currentY < 0 || currentX >= width * 2 - 4 || currentY >= height * 2 - 4)
-                        continue;
-                    for (int ix = 0; ix < 4; ix++) {
-                        for (int iy = 0; iy < 4; iy++) {
-                            if (zbuffer[ix + currentX][iy + currentY] == -9999) {
-                                zbuffer[ix + currentX][iy + currentY] = (short) (z + x - y);
-                                visible = true;
-                            }
-                        }
-                    }
-                    if (visible) {
-                        culled[culled_length++] = new short[]{x, y, z, voxels[x][y][z]};
-                        visible = false;
-                    }
-                }
-            }
-        }
+        cullVoxels();
+
+
         /*
         for (int sx = 0; sx < width * 2; sx += 2) {
             for (int sy = 0; sy < height * 2; sy++) {
@@ -242,12 +251,13 @@ public class Experiments extends ApplicationAdapter {
 
         minbuffer = new short[width * 2][height * 2];
         maxbuffer = new short[width * 2][height * 2];
-        for(int i = 0; i < width * 2; i++)
-            for(int j = 0; j < height * 2; j++) {
+        for(int i = 0; i < width * 2; i++) {
+            for (int j = 0; j < height * 2; j++) {
                 minbuffer[i][j] = -9999;
                 maxbuffer[i][j] = 255;
             }
-
+        }
+        cullVoxels();
         cam.viewportWidth = width * 2;
         cam.viewportHeight = height * 2;
         cam.position.set(width, height, 0); //cam.viewportHeight / 2f
