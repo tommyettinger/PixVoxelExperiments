@@ -154,17 +154,17 @@ public class Experiments extends ApplicationAdapter {
         models = new Model[xsize][ysize][zsize];
         short[][][] zombieVoxels = readCVX("Zombie", 40, 2), maleVoxels = readCVX("Male", 40, 16), femaleVoxels = readCVX("Female", 40, 1),
                 grassVoxels = readCVX("Terrain", 48, 50), sandVoxels = readCVX("Terrain", 48, 52), mudVoxels = readCVX("Terrain", 48, 54);
-        short[][][] zombieEdges = readEVX("Zombie", 168, 168, 2), maleEdges = readEVX("Male", 168, 168, 16), femaleEdges = readEVX("Female", 168, 168, 1),
-                grassEdges = readEVX("Terrain", 200, 200, 50), sandEdges = readEVX("Terrain", 200, 200, 52), mudEdges = readEVX("Terrain", 200, 200, 54);
+        short[][][] zombieEdges = readEVX("Zombie", 168, 208, 2), maleEdges = readEVX("Male", 168, 208, 16), femaleEdges = readEVX("Female", 168, 208, 1),
+                grassEdges = readEVX("Terrain", 200, 248, 50), sandEdges = readEVX("Terrain", 200, 248, 52), mudEdges = readEVX("Terrain", 200, 248, 54);
         ModelDisplay zombie = new ModelDisplay(zombieVoxels, zombieEdges), male = new ModelDisplay(maleVoxels, maleEdges), female = new ModelDisplay(femaleVoxels, femaleEdges),
                 grass = new ModelDisplay(grassVoxels, grassEdges), sand = new ModelDisplay(sandVoxels, sandEdges), mud = new ModelDisplay(mudVoxels, mudEdges);
         ModelDisplay[] terrains = {grass, sand, mud}, units = {zombie, zombie, male, female};
         for (int x = 0; x < xsize; x++) {
             for (int y = 0; y < ysize; y++) {
-                models[x][y][0] = new Model(terrains[r.nextInt(3)], x * 48, y * 48, 0, 0);
+                models[x][y][0] = new Model(terrains[r.nextInt(3)], x * 48, y * 48, 0, 0, 48);
 //                insertModel(terrains[r.nextInt(3)], x * 48, y * 48, 0);
                 if(r.nextInt(6) == 0)
-                    models[x][y][1] = new Model(units[r.nextInt(4)], x * 48 + 4, y * 48 + 4, 12,0);
+                    models[x][y][1] = new Model(units[r.nextInt(4)], x * 48 + 4, y * 48 + 4, 12,r.nextInt(4), 40);
 //                insertModel(units[r.nextInt(4)], x * 48 + 4, y * 48 + 4, 12);
             }
         }
@@ -219,7 +219,7 @@ public class Experiments extends ApplicationAdapter {
         cam.update();
         batch.setProjectionMatrix(cam.combined);
 
-		Gdx.gl.glClearColor(0.8f, 0.5f, 1.0f, 1);
+		Gdx.gl.glClearColor(0.5f, 0.7f, 1.0f, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		batch.begin();
 /*        for (int z = 0; z < zsize; z++) {
@@ -239,8 +239,8 @@ public class Experiments extends ApplicationAdapter {
                         current_voxel = m.md.voxels[m.facing][c];
 
                         currentX = (current_voxel[0] + m.x + current_voxel[1] + m.y) * 2;
-                        currentY = current_voxel[0] + m.x - current_voxel[1] - m.y - (current_voxel[2] + m.z) * 3;
-                        if (currentX < 0)
+                        currentY = current_voxel[1] + m.y - current_voxel[0] - m.x + (current_voxel[2] + m.z) * 3;
+                        /*if (currentX < 0)
                             continue;
                         if (currentY < 0)
                             continue;
@@ -248,7 +248,7 @@ public class Experiments extends ApplicationAdapter {
                             continue;
                         if (currentY > height * 2)
                             continue;
-
+*/
                         batch.draw(img, currentX, currentY, 4 * (current_voxel[3] & 0xff), 5 * (current_voxel[3] >> 8), 4, 4);
                         total_rendered++;
                     }
@@ -256,7 +256,7 @@ public class Experiments extends ApplicationAdapter {
                     screenxsize = current_edges.length;
                     screenysize = current_edges[0].length;
                     screenxoffset = (m.x + m.y) * 2;
-                    screenyoffset = m.x - m.y - m.z * 3;
+                    screenyoffset = - m.cubeSize + m.y - m.x + m.z * 3;
                     for(int x = 0; x < screenxsize; x+=2)
                     {
                         for(int y = 0; y < screenysize; y+=2) {
@@ -357,7 +357,7 @@ public class Experiments extends ApplicationAdapter {
         cullVoxels();*/
         cam.viewportWidth = width * 2;
         cam.viewportHeight = height * 2;
-        cam.position.set(width, height, 0); //cam.viewportHeight / 2f
+        cam.position.set(width, 0, 0); //cam.viewportHeight / 2f
         cam.update();
     }
 }
