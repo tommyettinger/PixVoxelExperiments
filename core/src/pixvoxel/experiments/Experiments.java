@@ -15,11 +15,12 @@ import java.util.Random;
 public class Experiments extends ApplicationAdapter {
     SpriteBatch batch;
     Texture img;
-    short[][][] voxels;
-    short[][] culled;
+    //short[][][] voxels;
+    //short[][] culled;
+    Model[][][] models;
     int culled_length = 0;
     short[][] zbuffer, minbuffer, outlinebuffer, maxbuffer;
-    short xsize = 48 * 20, ysize = 48 * 20, zsize = 52;
+    short xsize = 20, ysize = 20, zsize = 2;
     int width = 800;
     int height = 600;
     long total_rendered = 0;
@@ -28,7 +29,6 @@ public class Experiments extends ApplicationAdapter {
 
     public short[][][] readBVX(String filename, int row) {
         row &= 0x7f;
-        font = new BitmapFont(Gdx.files.internal("MonologyLarge.fnt"), Gdx.files.internal("MonologyLarge.png"), false, true);
         short[][][] vs = new short[1][1][1];
         FileHandle file = Gdx.files.internal(filename + ".bvx");
         if (file.exists()) {
@@ -47,6 +47,56 @@ public class Experiments extends ApplicationAdapter {
         return vs;
     }
 
+    public short[][][] readCVX(String filename, int size, int row) {
+        row &= 0x7f;
+        short[][][] vs = new short[4][1][4];
+        int dirnum = 0;
+        for (String dir : new String[] {"SE", "SW", "NW", "NE"}) {
+            FileHandle file = Gdx.files.internal(filename + "/" + filename + "_[" + size + "]_" + dir + ".cvx");
+
+            if (file.exists()) {
+                byte[] bins = file.readBytes();
+                short total = (short)(bins.length / 4);
+                vs[dirnum] = new short[total][4];
+                for (short i = 0; i < total; i++) {
+                    short x = (short)(bins[i*4 + 0] & 0xff);
+                    short y = (short)(bins[i*4 + 1] & 0xff);
+                    short z = (short)(bins[i*4 + 2] & 0xff);
+                    short color = (short)((((0xff & bins[i*4 + 3]) == 255 ? 0 : row) << 8) | (0xff & bins[i*4 + 3]));
+                    vs[dirnum][i][0] = x;
+                    vs[dirnum][i][1] = y;
+                    vs[dirnum][i][2] = z;
+                    vs[dirnum][i][3] = color;
+                    //vs[x][y][z] = (short) (((((0xff & bins[z * size * size + y * size + x]) == 255) ? 0 : row) << 8) | (0xff & bins[z * size * size + y * size + x]));
+                }
+            }
+            dirnum++;
+        }
+        return vs;
+    }
+    public short[][][] readEVX(String filename, int wide, int tall, int row) {
+        row &= 0x7f;
+        short[][][] vs = new short[4][wide][tall];
+        int dirnum = 0;
+        for (String dir : new String[] {"SE", "SW", "NW", "NE"}) {
+            FileHandle file = Gdx.files.internal(filename + "/" + filename + "_[" + wide + "x" + tall + "]_" + dir + ".evx");
+
+            if (file.exists()) {
+                byte[] bins = file.readBytes();
+                vs[dirnum] = new short[wide][tall];
+                for (short i = 0; i < tall; i++) {
+                    for (short j = 0; j < wide; j++) {
+                        short color = (short) ((((0xff & bins[i * wide + j]) == 255 ? 0 : row) << 8) | (0xff & bins[i * wide + j]));
+                        vs[dirnum][j][i] = color;
+                        //vs[x][y][z] = (short) (((((0xff & bins[z * size * size + y * size + x]) == 255) ? 0 : row) << 8) | (0xff & bins[z * size * size + y * size + x]));
+                    }
+                }
+            }
+            dirnum++;
+        }
+        return vs;
+    }
+/*
     public void insertModel(short[][][] model, int xpos, int ypos, int zpos)
     {
         for (int x = 0; x < model.length; x++) {
@@ -58,8 +108,9 @@ public class Experiments extends ApplicationAdapter {
             }
         }
     }
+    */
     static Random r = new Random();
-
+/*
     public void cullVoxels()
     {
         boolean visible = false;
@@ -88,7 +139,7 @@ public class Experiments extends ApplicationAdapter {
             }
         }
     }
-
+*/
 	@Override
 	public void create () {
         width = Gdx.graphics.getWidth();
@@ -96,27 +147,28 @@ public class Experiments extends ApplicationAdapter {
 
 		batch = new SpriteBatch();
 		img = new Texture(Gdx.files.internal("voxels.png"), Pixmap.Format.RGBA8888, false);
+        font = new BitmapFont(Gdx.files.internal("MonologyLarge.fnt"), Gdx.files.internal("MonologyLarge.png"), false, true);
 
-        voxels = new short[xsize][ysize][zsize];
-        culled = new short[xsize*ysize*5][4];
-
-        for (short x = 0; x < xsize; x++) {
-            for (short y = 0; y < ysize; y++) {
-                for (short z = 0; z < zsize; z++) {
-                    voxels[x][y][z] = 255;
-                }
-            }
-        }
-        short[][][] zombie = readBVX("Zombie", 2), male = readBVX("Male", 16), female = readBVX("Female", 1),
-                grass = readBVX("Terrain", 50), sand = readBVX("Terrain", 52), mud = readBVX("Terrain", 54);
-        short[][][][] terrains = {grass, sand, mud}, units = {zombie, zombie, male, female};
-        for (int x = 0; x < 20; x++) {
-            for (int y = 0; y < 20; y++) {                insertModel(terrains[r.nextInt(3)], x * 48, y * 48, 0);
+//        voxels = new short[xsize][ysize][zsize];
+//        culled = new short[xsize*ysize*5][4];
+        models = new Model[xsize][ysize][zsize];
+        short[][][] zombieVoxels = readCVX("Zombie", 40, 2), maleVoxels = readCVX("Male", 40, 16), femaleVoxels = readCVX("Female", 40, 1),
+                grassVoxels = readCVX("Terrain", 48, 50), sandVoxels = readCVX("Terrain", 48, 52), mudVoxels = readCVX("Terrain", 48, 54);
+        short[][][] zombieEdges = readEVX("Zombie", 168, 168, 2), maleEdges = readEVX("Male", 168, 168, 16), femaleEdges = readEVX("Female", 168, 168, 1),
+                grassEdges = readEVX("Terrain", 200, 200, 50), sandEdges = readEVX("Terrain", 200, 200, 52), mudEdges = readEVX("Terrain", 200, 200, 54);
+        ModelDisplay zombie = new ModelDisplay(zombieVoxels, zombieEdges), male = new ModelDisplay(maleVoxels, maleEdges), female = new ModelDisplay(femaleVoxels, femaleEdges),
+                grass = new ModelDisplay(grassVoxels, grassEdges), sand = new ModelDisplay(sandVoxels, sandEdges), mud = new ModelDisplay(mudVoxels, mudEdges);
+        ModelDisplay[] terrains = {grass, sand, mud}, units = {zombie, zombie, male, female};
+        for (int x = 0; x < xsize; x++) {
+            for (int y = 0; y < ysize; y++) {
+                models[x][y][0] = new Model(terrains[r.nextInt(3)], x * 48, y * 48, 0, 0);
+//                insertModel(terrains[r.nextInt(3)], x * 48, y * 48, 0);
                 if(r.nextInt(6) == 0)
-                    insertModel(units[r.nextInt(4)], x * 48 + 4, y * 48 + 4, 12);
+                    models[x][y][1] = new Model(units[r.nextInt(4)], x * 48 + 4, y * 48 + 4, 12,0);
+//                insertModel(units[r.nextInt(4)], x * 48 + 4, y * 48 + 4, 12);
             }
         }
-        minbuffer = new short[width * 2][height * 2];
+/*        minbuffer = new short[width * 2][height * 2];
         maxbuffer = new short[width * 2][height * 2];
         for(int i = 0; i < width * 2; i++)
             for(int j = 0; j < height * 2; j++) {
@@ -126,7 +178,7 @@ public class Experiments extends ApplicationAdapter {
         outlinebuffer = maxbuffer.clone();
 
         cullVoxels();
-
+*/
 
         /*
         for (int sx = 0; sx < width * 2; sx += 2) {
@@ -155,12 +207,14 @@ public class Experiments extends ApplicationAdapter {
         cam.position.set(cam.viewportWidth / 2f, cam.viewportHeight / 2f, 0);
         cam.update();
 	}
-    private int currentX = 0, currentY = 0;
+    private int currentX = 0, currentY = 0, screenxsize = 200, screenysize = 200,
+            screenxoffset = 0, screenyoffset = 0;
+    private short[][] current_edges;
     private short[] current_voxel;
 	@Override
 	public void render () {
-        zbuffer = minbuffer.clone();
-        outlinebuffer = maxbuffer.clone();
+//        zbuffer = minbuffer.clone();
+//        outlinebuffer = maxbuffer.clone();
 
         cam.update();
         batch.setProjectionMatrix(cam.combined);
@@ -171,32 +225,75 @@ public class Experiments extends ApplicationAdapter {
 /*        for (int z = 0; z < zsize; z++) {
             for (int x = 0; x < xsize; x++) {
                 for (int y = ysize - 1; y >= 0; y--) {*/
-        for(int c = culled_length - 1; c >= 0; c--)
+
+        for(int boardZ = 0; boardZ < zsize; boardZ++)
         {
-                    current_voxel =culled[c];
-                    if((current_voxel[3] & 0xff) != 255)
-                    {
-                        currentX = (current_voxel[0] + current_voxel[1]) * 2;
-                        currentY = height + current_voxel[1] - current_voxel[0] + current_voxel[2] * 3;
-                        if(currentX < 0)
+            for(int boardX = 0; boardX < xsize; boardX++)
+            {
+                for(int boardY = ysize - 1; boardY >= 0; boardY--)
+                {
+                    Model m = models[boardX][boardY][boardZ];
+                    if(m == null)
+                        continue;
+                    for(int c = 0; c < m.md.voxels[m.facing].length; c++) {
+                        current_voxel = m.md.voxels[m.facing][c];
+
+                        currentX = (current_voxel[0] + m.x + current_voxel[1] + m.y) * 2;
+                        currentY = current_voxel[0] + m.x - current_voxel[1] - m.y - (current_voxel[2] + m.z) * 3;
+                        if (currentX < 0)
                             continue;
-                        if(currentY < 0)
+                        if (currentY < 0)
                             continue;
-                        if(currentX > width * 2 - 4)
+                        if (currentX > width * 2)
                             continue;
-                        if(currentY > height * 2 - 4)
+                        if (currentY > height * 2)
                             continue;
 
-                        for(int ix = 0; ix < 4; ix++) {
-                            for (int iy = 0; iy < 4; iy++) {
-                                zbuffer[ix + currentX][iy + currentY] = (short)(current_voxel[2] + current_voxel[0] - current_voxel[1]);
-                                outlinebuffer[ix + currentX][iy + currentY] = current_voxel[3];
-                            }
-                        }
                         batch.draw(img, currentX, currentY, 4 * (current_voxel[3] & 0xff), 5 * (current_voxel[3] >> 8), 4, 4);
                         total_rendered++;
                     }
+                    current_edges = m.md.edges[m.facing];
+                    screenxsize = current_edges.length;
+                    screenysize = current_edges[0].length;
+                    screenxoffset = (m.x + m.y) * 2;
+                    screenyoffset = m.x - m.y - m.z * 3;
+                    for(int x = 0; x < screenxsize; x+=2)
+                    {
+                        for(int y = 0; y < screenysize; y+=2) {
+                            if((current_edges[x][y] & 0xff) != 255)
+                            {
+                                batch.draw(img, x + screenxoffset, y + screenyoffset, 2f, 2f, 4 * (current_edges[x][y] & 0xff), 5 * (current_edges[x][y] >> 8) + 4, 1, 1, false, false);
+                                total_rendered++;
+                            }
+                        }
+                    }
                 }
+            }
+        }
+        /*for(int c = culled_length - 1; c >= 0; c--) {
+            current_voxel = culled[c];
+            if ((current_voxel[3] & 0xff) != 255) {
+                currentX = (current_voxel[0] + current_voxel[1]) * 2;
+                currentY = height + current_voxel[1] - current_voxel[0] + current_voxel[2] * 3;
+                if (currentX < 0)
+                    continue;
+                if (currentY < 0)
+                    continue;
+                if (currentX > width * 2 - 4)
+                    continue;
+                if (currentY > height * 2 - 4)
+                    continue;
+
+                for (int ix = 0; ix < 4; ix++) {
+                    for (int iy = 0; iy < 4; iy++) {
+                        zbuffer[ix + currentX][iy + currentY] = (short) (current_voxel[2] + current_voxel[0] - current_voxel[1]);
+                        outlinebuffer[ix + currentX][iy + currentY] = current_voxel[3];
+                    }
+                }
+                batch.draw(img, currentX, currentY, 4 * (current_voxel[3] & 0xff), 5 * (current_voxel[3] >> 8), 4, 4);
+                total_rendered++;
+            }
+        }
 
 
 
@@ -234,9 +331,9 @@ public class Experiments extends ApplicationAdapter {
                 }
                 if (z > zbuffer[x - 2][y + 2]) {
                     batch.draw(img, x - 2, y + 2, 2f, 2f, 4 * color, 5 * row + 4, 1, 1, false, false);
-                }*/
+                } * /
             }
-        }
+        }*/
 
         font.draw(batch, "FPS: " + Gdx.graphics.getFramesPerSecond() + ", total rendered items: " + total_rendered, width / 2, height / 2);
         total_rendered = 0;
@@ -248,7 +345,7 @@ public class Experiments extends ApplicationAdapter {
 
         this.width = width;
         this.height = height;
-
+/*
         minbuffer = new short[width * 2][height * 2];
         maxbuffer = new short[width * 2][height * 2];
         for(int i = 0; i < width * 2; i++) {
@@ -257,7 +354,7 @@ public class Experiments extends ApplicationAdapter {
                 maxbuffer[i][j] = 255;
             }
         }
-        cullVoxels();
+        cullVoxels();*/
         cam.viewportWidth = width * 2;
         cam.viewportHeight = height * 2;
         cam.position.set(width, height, 0); //cam.viewportHeight / 2f
