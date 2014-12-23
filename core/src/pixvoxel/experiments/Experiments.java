@@ -9,12 +9,13 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.sun.javafx.sg.PGShape;
 
 import java.util.Random;
 
 public class Experiments extends ApplicationAdapter {
     SpriteBatch batch;
-    Texture img;
+   // Texture img;
     //short[][][] voxels;
     //short[][] culled;
     Model[][][] models;
@@ -146,7 +147,9 @@ public class Experiments extends ApplicationAdapter {
         height = Gdx.graphics.getHeight();
 
 		batch = new SpriteBatch();
-		img = new Texture(Gdx.files.internal("voxels.png"), Pixmap.Format.RGBA8888, false);
+        Pixmap.setFilter(Pixmap.Filter.BiLinear);
+		Model.img = new Pixmap(Gdx.files.internal("voxels.png"));
+
         font = new BitmapFont(Gdx.files.internal("MonologyLarge.fnt"), Gdx.files.internal("MonologyLarge.png"), false, true);
 
 //        voxels = new short[xsize][ysize][zsize];
@@ -159,15 +162,22 @@ public class Experiments extends ApplicationAdapter {
         ModelDisplay zombie = new ModelDisplay(zombieVoxels, zombieEdges), male = new ModelDisplay(maleVoxels, maleEdges), female = new ModelDisplay(femaleVoxels, femaleEdges),
                 grass = new ModelDisplay(grassVoxels, grassEdges), sand = new ModelDisplay(sandVoxels, sandEdges), mud = new ModelDisplay(mudVoxels, mudEdges);
         ModelDisplay[] terrains = {grass, sand, mud}, units = {zombie, zombie, male, female};
+        String[] terrainNames = {"grass", "sand", "mud"}, unitNames = {"zombie", "zombie", "male", "female"};
         for (int x = 0; x < xsize; x++) {
             for (int y = 0; y < ysize; y++) {
-                models[x][y][0] = new Model(terrains[r.nextInt(3)], x * 48, y * 48, 0, 0, 48);
+                int rt = r.nextInt(3);
+                models[x][y][0] = new Model(terrainNames[rt], terrains[rt], x * 48, y * 48, 0, 0, 48);
 //                insertModel(terrains[r.nextInt(3)], x * 48, y * 48, 0);
-                if(r.nextInt(6) == 0)
-                    models[x][y][1] = new Model(units[r.nextInt(4)], x * 48 + 4, y * 48 + 4, 12,r.nextInt(4), 40);
+                if(r.nextInt(6) == 0) {
+                    int ru = r.nextInt(4);
+                    models[x][y][1] = new Model(unitNames[ru], units[ru],x * 48 + 4, y * 48 + 4, 12, r.nextInt(4), 40);
+                }
 //                insertModel(units[r.nextInt(4)], x * 48 + 4, y * 48 + 4, 12);
             }
         }
+
+
+
 /*        minbuffer = new short[width * 2][height * 2];
         maxbuffer = new short[width * 2][height * 2];
         for(int i = 0; i < width * 2; i++)
@@ -207,7 +217,7 @@ public class Experiments extends ApplicationAdapter {
         cam.position.set(cam.viewportWidth / 2f, cam.viewportHeight / 2f, 0);
         cam.update();
 	}
-    private int currentX = 0, currentY = 0, screenxsize = 200, screenysize = 200,
+    private int currentX = 0, currentY = 0, screenxsize = 208, screenysize = 248,
             screenxoffset = 0, screenyoffset = 0;
     private short[][] current_edges;
     private short[] current_voxel;
@@ -235,7 +245,9 @@ public class Experiments extends ApplicationAdapter {
                     Model m = models[boardX][boardY][boardZ];
                     if(m == null)
                         continue;
-                    for(int c = 0; c < m.md.voxels[m.facing].length; c++) {
+                    batch.draw(Model.textures.get(m.name + m.facing), (m.x + m.y) * 2, -64 + m.y - m.x + m.z * 3);
+                    total_rendered++;
+                    /*for(int c = 0; c < m.md.voxels[m.facing].length; c++) {
                         current_voxel = m.md.voxels[m.facing][c];
 
                         currentX = (current_voxel[0] + m.x + current_voxel[1] + m.y) * 2;
@@ -247,8 +259,7 @@ public class Experiments extends ApplicationAdapter {
                         if (currentX > width * 2)
                             continue;
                         if (currentY > height * 2)
-                            continue;
-*/
+                            continue; * /
                         batch.draw(img, currentX, currentY, 4 * (current_voxel[3] & 0xff), 5 * (current_voxel[3] >> 8), 4, 4);
                         total_rendered++;
                     }
@@ -266,7 +277,7 @@ public class Experiments extends ApplicationAdapter {
                                 total_rendered++;
                             }
                         }
-                    }
+                    }*/
                 }
             }
         }
