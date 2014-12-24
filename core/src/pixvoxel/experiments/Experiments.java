@@ -31,7 +31,7 @@ public class Experiments extends ApplicationAdapter {
     public short[][][] readBVX(String filename, int row) {
         row &= 0x7f;
         short[][][] vs = new short[1][1][1];
-        FileHandle file = Gdx.files.internal(filename + ".bvx");
+        FileHandle file = Gdx.files.internal(filename + "/" + filename + ".bvx");
         if (file.exists()) {
             byte[] bins = file.readBytes();
             double total = bins.length;
@@ -150,27 +150,31 @@ public class Experiments extends ApplicationAdapter {
         Pixmap.setFilter(Pixmap.Filter.BiLinear);
 		Model.img = new Pixmap(Gdx.files.internal("voxels.png"));
 
+
         font = new BitmapFont(Gdx.files.internal("MonologyLarge.fnt"), Gdx.files.internal("MonologyLarge.png"), false, true);
 
 //        voxels = new short[xsize][ysize][zsize];
 //        culled = new short[xsize*ysize*5][4];
         models = new Model[xsize][ysize][zsize];
-        short[][][] zombieVoxels = readCVX("Zombie", 40, 2), maleVoxels = readCVX("Male", 40, 16), femaleVoxels = readCVX("Female", 40, 1),
-                grassVoxels = readCVX("Terrain", 48, 50), sandVoxels = readCVX("Terrain", 48, 52), mudVoxels = readCVX("Terrain", 48, 54);
-        short[][][] zombieEdges = readEVX("Zombie", 168, 208, 2), maleEdges = readEVX("Male", 168, 208, 16), femaleEdges = readEVX("Female", 168, 208, 1),
-                grassEdges = readEVX("Terrain", 200, 248, 50), sandEdges = readEVX("Terrain", 200, 248, 52), mudEdges = readEVX("Terrain", 200, 248, 54);
-        ModelDisplay zombie = new ModelDisplay(zombieVoxels, zombieEdges), male = new ModelDisplay(maleVoxels, maleEdges), female = new ModelDisplay(femaleVoxels, femaleEdges),
-                grass = new ModelDisplay(grassVoxels, grassEdges), sand = new ModelDisplay(sandVoxels, sandEdges), mud = new ModelDisplay(mudVoxels, mudEdges);
-        ModelDisplay[] terrains = {grass, sand, mud}, units = {zombie, zombie, male, female};
-        String[] terrainNames = {"grass", "sand", "mud"}, unitNames = {"zombie", "zombie", "male", "female"};
+        //short[][][] zombieVoxels = readCVX("Zombie", 40, 2), maleVoxels = readCVX("Male", 40, 16), femaleVoxels = readCVX("Female", 40, 1),
+        //        grassVoxels = readCVX("Terrain", 48, 50), sandVoxels = readCVX("Terrain", 48, 52), mudVoxels = readCVX("Terrain", 48, 54);
+        short[][][] zombie = readBVX("Zombie", 2), skeleton = readBVX("Skeleton", 6), male = readBVX("Male", 16), female = readBVX("Female", 1),
+                grass = readBVX("Terrain", 50), sand = readBVX("Terrain", 52), mud = readBVX("Terrain", 54);
+//        short[][][] zombieEdges = readEVX("Zombie", 168, 208, 2), maleEdges = readEVX("Male", 168, 208, 16), femaleEdges = readEVX("Female", 168, 208, 1),
+//                grassEdges = readEVX("Terrain", 200, 248, 50), sandEdges = readEVX("Terrain", 200, 248, 52), mudEdges = readEVX("Terrain", 200, 248, 54);
+        //ModelDisplay zombie = new ModelDisplay(zombieVoxels), skeleton  = new ModelDisplay(skeletonVoxels), male = new ModelDisplay(maleVoxels), female = new ModelDisplay(femaleVoxels),
+        //        grass = new ModelDisplay(grassVoxels), sand = new ModelDisplay(sandVoxels), mud = new ModelDisplay(mudVoxels);
+        short[][][][] terrains = {grass, sand, mud}, units = {zombie, zombie, skeleton, male, female};
+        String[] terrainNames = {"grass", "sand", "mud"}, unitNames = {"zombie", "zombie", "skeleton", "male", "female"};
+        double[] terrainDamages = {0.01, 0.02, 0.03, 0.05, 0.1, 0.15, 0.2}, unitDamages = {0.0, 0.02, 0.04, 0.06, 0.08, 0.1, 0.12};
         for (int x = 0; x < xsize; x++) {
             for (int y = 0; y < ysize; y++) {
                 int rt = r.nextInt(3);
-                models[x][y][0] = new Model(terrainNames[rt], terrains[rt], x * 48, y * 48, 0, 0, 48);
+                models[x][y][0] = new Model(terrainNames[rt], terrains[rt], x * 48, y * 48, 0, 0, terrainDamages[r.nextInt(7)]);
 //                insertModel(terrains[r.nextInt(3)], x * 48, y * 48, 0);
                 if(r.nextInt(6) == 0) {
-                    int ru = r.nextInt(4);
-                    models[x][y][1] = new Model(unitNames[ru], units[ru],x * 48 + 4, y * 48 + 4, 12, r.nextInt(4), 40);
+                    int ru = r.nextInt(5);
+                    models[x][y][1] = new Model(unitNames[ru], units[ru],x * 48 + 4, y * 48 + 4, 12, r.nextInt(4), unitDamages[r.nextInt(7)]);
                 }
 //                insertModel(units[r.nextInt(4)], x * 48 + 4, y * 48 + 4, 12);
             }
@@ -245,7 +249,7 @@ public class Experiments extends ApplicationAdapter {
                     Model m = models[boardX][boardY][boardZ];
                     if(m == null)
                         continue;
-                    batch.draw(Model.textures.get(m.name + m.facing), (m.x + m.y) * 2, -64 + m.y - m.x + m.z * 3);
+                    batch.draw(Model.textures.get(m.name), (m.x + m.y) * 2, -64 + m.y - m.x + m.z * 3);
                     total_rendered++;
                     /*for(int c = 0; c < m.md.voxels[m.facing].length; c++) {
                         current_voxel = m.md.voxels[m.facing][c];
